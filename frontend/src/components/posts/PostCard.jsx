@@ -20,14 +20,25 @@ const PostCard = ({ post, onPostUpdated, isProfilePage, onSaveToggle }) => {
   const { filter } = useSelector(state => state.posts);
   const dispatch = useDispatch();
   
-  // Sync local state and likes with prop changes
   useEffect(() => {
+    // Always sync with the latest post data
     setLocalState(post);
-    setLocalLikes(post.likes || []);
+    // Ensure likes is an array
+    if (Array.isArray(post.likes)) {
+      setLocalLikes(post.likes);
+    } else {
+      setLocalLikes([]);
+    }
   }, [post]);
   
   // Determine if post is liked by current user
-  const isLiked = Boolean(user && localLikes.includes(user._id));
+  // Determine if post is liked by current user by checking the likes array
+  // The array may contain either user IDs (strings) or user objects
+  const isLiked = Boolean(
+    user && localLikes.some(like => 
+      like?.toString() === user._id || like?._id === user._id
+    )
+  );
   
   const handleLike = async () => {
     if (!user) {
@@ -38,20 +49,25 @@ const PostCard = ({ post, onPostUpdated, isProfilePage, onSaveToggle }) => {
     try {
       setIsLiking(true);
       
-      // Optimistic update for better UX
+      // Optimistic update
       setLocalLikes(prev => 
         isLiked 
-          ? prev.filter(id => id !== user._id)
-          : [...prev, user._id]
+          ? prev.filter(like => like?.toString() !== user._id && like?._id !== user._id)
+          : [...prev, { _id: user._id }]  // Add as object to match populated format
       );
       
       // Make API call
       const response = await dispatch(toggleLike(localState._id)).unwrap();
       
-      // Update with server data
-      setLocalLikes(response.likes);
+      // Ensure we have the likes array from the response
+      if (Array.isArray(response.likes)) {
+        setLocalLikes(response.likes);
+      }
       
-      // Notify parent component if needed
+      // Update local state with full response data
+      setLocalState(response);
+      
+      // Only refresh the feed if specifically requested by parent
       if (onPostUpdated) {
         onPostUpdated();
       }
@@ -195,18 +211,20 @@ const PostCard = ({ post, onPostUpdated, isProfilePage, onSaveToggle }) => {
           <button
             onClick={handleLike}
             disabled={isLiking}
-            className="flex items-center space-x-2 transform transition-all duration-200"
+            className="flex items-center space-x-2 transform transition-colors duration-200 ease-in-out"
           >
             {isLiking ? (
               <LoadingSpinner size="sm" />
             ) : (
               <>
                 <div className="w-6 h-6 flex items-center justify-center">
-                  {isLiked ? (
-                    <MdFavorite className="w-6 h-6 text-red-500 dark:text-red-400" />
-                  ) : (
-                    <MdFavoriteBorder className="w-6 h-6 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors" />
-                  )}
+                  <div className="transform transition-all duration-200 ease-in-out">
+                    {isLiked ? (
+                      <MdFavorite className="w-6 h-6 text-red-500 dark:text-red-400 animate-like" />
+                    ) : (
+                      <MdFavoriteBorder className="w-6 h-6 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400" />
+                    )}
+                  </div>
                 </div>
                 <span className={`transition-all duration-200 ${
                   isLiked ? 'text-red-500 dark:text-red-400' : ''

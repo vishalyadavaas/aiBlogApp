@@ -249,10 +249,10 @@ const postSlice = createSlice({
       // Update in posts list with the complete updated post data
       state.posts = state.posts.map(post => {
         if (post._id === updatedPost._id) {
+          // Preserve populated userId data
           return {
-            ...post,
             ...updatedPost,
-            userId: updatedPost.userId || post.userId
+            userId: post.userId // Keep the existing userId object with populated data
           };
         }
         return post;

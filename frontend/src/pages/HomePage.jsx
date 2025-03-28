@@ -111,10 +111,6 @@ const HomePage = () => {
           >
             <PostCard 
               post={post}
-              onPostUpdated={() => {
-                // Fetch fresh data to ensure all posts are up to date
-                dispatch(getPosts({ page: 1, filter })).unwrap();
-              }}
             />
           </div>
         ))}
