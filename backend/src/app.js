@@ -16,8 +16,8 @@ app.use(cookieParser());
 
 // Database connection
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((err) => console.error('MongoDB connection error:', err));
+  .then(() => console.log('Database connected'))
+  .catch(() => console.error('Database connection failed'));
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
@@ -26,7 +26,7 @@ app.use('/api/users', require('./routes/userRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('Server error occurred');
   res.status(500).json({
     message: 'Something went wrong!',
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
@@ -41,7 +41,7 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log('Server started');
 });
 
 module.exports = app;
