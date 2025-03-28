@@ -17,12 +17,7 @@ const auth = async (req, res, next) => {
         // Get user from database
         const user = await User.findById(decoded.id).select('-password');
         if (user) {
-          // Add user to request object and log
-          console.log('Auth middleware - User:', {
-            id: user._id,
-            email: user.email,
-            token: token.substring(0, 10) + '...'
-          });
+          // Add user to request object
           req.user = user;
         }
       }
@@ -57,12 +52,7 @@ const requireAuth = async (req, res, next) => {
       return res.status(401).json({ message: 'Invalid token. User not found.' });
     }
 
-    // Add user to request object and log
-    console.log('Auth middleware - User:', {
-      id: user._id,
-      email: user.email,
-      token: token.substring(0, 10) + '...'
-    });
+    // Add user to request object
     req.user = user;
     next();
   } catch (error) {

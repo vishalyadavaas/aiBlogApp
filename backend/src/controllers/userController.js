@@ -8,13 +8,8 @@ const fs = require('fs').promises;
 // @access  Private
 const getProfile = async (req, res) => {
   try {
-    console.log('Get profile request:', {
-      params: req.params,
-      user: req.user._id
-    });
     // For own profile
     if (!req.params.userId) {
-      console.log('Fetching own profile:', req.user._id);
       const user = await User.findById(req.user._id)
         .select('name email bio profilePic followers following')
         .populate('followers', 'name profilePic bio')
@@ -37,7 +32,6 @@ const getProfile = async (req, res) => {
     }
 
     // For other user's profile
-    console.log('Fetching user profile:', req.params.userId);
     const user = await User.findById(req.params.userId)
       .select('name email bio profilePic followers following')
       .populate('followers', 'name profilePic bio')
@@ -47,23 +41,10 @@ const getProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    console.log('User found:', {
-      id: user._id,
-      name: user.name,
-      requestingUserId: req.user._id
-    });
-
     // Check if the requesting user follows this profile (only for other users' profiles)
     const isFollowing = req.params.userId && 
       req.params.userId !== req.user._id.toString() &&
       user.followers.some(f => f._id.toString() === req.user._id.toString());
-
-    console.log('Follow check:', {
-      userId: req.params.userId,
-      requestingUserId: req.user._id.toString(),
-      followers: user.followers.map(f => f._id.toString()),
-      isFollowing: isFollowing
-    });
 
     const profile = {
       _id: user._id,
@@ -104,7 +85,6 @@ const updateProfile = async (req, res) => {
 
     if (req.file) {
       try {
-        console.log('Uploading file to cloudinary:', req.file.path);
         
         // Check if file exists
         try {
@@ -124,12 +104,10 @@ const updateProfile = async (req, res) => {
           crop: "scale"
         });
 
-        console.log('Cloudinary upload success:', result.secure_url);
 
         try {
           // Delete local file after upload
           await fs.unlink(req.file.path);
-          console.log('Local file deleted successfully');
         } catch (err) {
           console.error('Error deleting local file:', err);
           // Don't return here, continue with the update
@@ -147,7 +125,6 @@ const updateProfile = async (req, res) => {
     }
 
     const updatedUser = await user.save();
-    console.log('User profile updated successfully');
     res.json({
       _id: updatedUser._id,
       name: updatedUser.name,
@@ -193,12 +170,6 @@ const followUser = async (req, res) => {
       .select('name email bio profilePic followers following')
       .populate('followers', 'name profilePic bio')
       .populate('following', 'name profilePic bio');
-
-    console.log('Follow success:', {
-      currentUser: currentUser._id.toString(),
-      userToFollow: userToFollow._id.toString(),
-      updatedFollowers: updatedProfile.followers.map(f => f._id.toString())
-    });
 
     res.json({
       message: 'Successfully followed user',
@@ -255,12 +226,6 @@ const unfollowUser = async (req, res) => {
       .select('name email bio profilePic followers following')
       .populate('followers', 'name profilePic bio')
       .populate('following', 'name profilePic bio');
-
-    console.log('Unfollow success:', {
-      currentUser: currentUser._id.toString(),
-      userToUnfollow: userToUnfollow._id.toString(),
-      updatedFollowers: updatedProfile.followers.map(f => f._id.toString())
-    });
 
     res.json({
       message: 'Successfully unfollowed user',
@@ -452,7 +417,6 @@ const deleteAccount = async (req, res) => {
 // @access  Private
 const getUserPosts = async (req, res) => {
   try {
-    console.log('Getting posts for user:', req.params.userId || 'current user');
     const targetUserId = req.params.userId || req.user._id;
     const posts = await Post.find({ userId: targetUserId })
       .sort({ createdAt: -1 })
@@ -460,7 +424,6 @@ const getUserPosts = async (req, res) => {
 
     res.json(posts);
   } catch (error) {
-    console.error('Error fetching user posts:', error);
     res.status(500).json({
       message: 'Error fetching user posts',
       error: error.message

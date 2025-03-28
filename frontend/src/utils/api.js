@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5001/api';
+const API_URL = 'https://aiblog-backend-production.up.railway.app/api';
 
 // Create axios instance
 const api = axios.create({
@@ -15,13 +15,7 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
-      console.log('Adding token to request:', {
-        url: config.url,
-        token: token.substring(0, 10) + '...'
-      });
       config.headers.Authorization = `Bearer ${token}`;
-    } else {
-      console.log('No token found for request:', config.url);
     }
     return config;
   },
@@ -31,21 +25,12 @@ api.interceptors.request.use(
   }
 );
 
-// Add response interceptor for debugging
+// Add response interceptor for error handling
 api.interceptors.response.use(
-  (response) => {
-    console.log('Response:', {
-      url: response.config.url,
-      status: response.status,
-      data: response.data
-    });
-    return response;
-  },
+  (response) => response,
   (error) => {
     console.error('API Error:', {
-      url: error.config?.url,
-      status: error.response?.status,
-      data: error.response?.data
+      status: error.response?.status
     });
     return Promise.reject(error);
   }
@@ -56,7 +41,6 @@ export const loginUser = (credentials) => api.post('/auth/login', credentials);
 export const registerUser = (userData) => api.post('/auth/signup', userData);
 export const getUserProfile = (userId) => {
   const url = userId ? `/users/${userId}/profile` : '/users/profile';
-  console.log('Fetching profile from:', url);
   return api.get(url);
 };
 
@@ -78,7 +62,6 @@ export const users = {
   getById: (userId) => api.get(`/users/${userId}/profile`),
   getPosts: (userId) => {
     const url = userId ? `/users/${userId}/posts` : '/users/posts';
-    console.log('Fetching posts from:', url);
     return api.get(url);
   },
   getFollowers: (userId) => api.get(`/users/${userId}/followers`),
@@ -90,10 +73,7 @@ export const users = {
       },
     }),
   deleteAccount: () => api.delete('/users/profile'),
-  getSavedPosts: () => {
-    console.log('Fetching saved posts');
-    return api.get('/users/saved/posts');
-  },
+  getSavedPosts: () => api.get('/users/saved/posts'),
   follow: (userId) => api.post(`/users/follow/${userId}`),
   unfollow: (userId) => api.post(`/users/unfollow/${userId}`)
 };
