@@ -124,6 +124,9 @@ const CreatePostPage = () => {
                 >
                   What would you like to write about?
                 </label>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  AI can make mistakes. For theory blogs, you must mention the theory in the prompt. If you want code, you should also mention it in the prompt.
+                </p>
                 <textarea
                   id="prompt"
                   value={prompt}
