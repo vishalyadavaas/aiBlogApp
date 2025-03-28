@@ -52,45 +52,50 @@ const RootLayout = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Navigation */}
-      <nav className="fixed top-0 z-50 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="px-3 py-3 lg:px-5 lg:pl-3">
+      <nav className="fixed top-0 z-50 w-full bg-white dark:bg-gray-800 shadow-lg border-b border-gray-200 dark:border-gray-700">
+        <div className="px-4 py-3 lg:px-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-4">
               {user && !isAuthPage && (
                 <button
                   ref={buttonRef}
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="p-2 rounded-lg lg:hidden hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="p-2 rounded-lg lg:hidden hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   <FiMenu className="w-6 h-6 text-gray-500 dark:text-gray-400" />
                 </button>
               )}
-              <Link to="/" className="flex ml-2 md:mr-24">
-                <span className="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">
-                  AiBlog
-                </span>
+              <Link to="/" className="flex items-center space-x-3 group">
+                <div className="relative w-9 h-9 flex items-center justify-center transform transition-all duration-300 group-hover:scale-110 group-hover:brightness-110">
+                  <img 
+                    src="/Icon.png" 
+                    alt="AiBlog Logo" 
+                    className="w-full h-full object-contain drop-shadow-lg"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-2xl font-bold text-gray-900 dark:text-white">AiBlog</span>
+                  <div className="h-[2px] bg-blue-600 dark:bg-blue-500 transform scale-x-0 origin-left transition-transform duration-300 group-hover:scale-x-100"></div>
+                </div>
               </Link>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center space-x-4">
               <button
                 onClick={() => dispatch(toggleTheme())}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 ml-2"
+                className="hidden w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {mode === 'dark' ? 'Light' : 'Dark'}
-                </span>
               </button>
               {!isAuthPage && (user ? (
                 <button
                   onClick={handleLogout}
-                  className="ml-3 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+                  className="btn-primary"
                 >
                   Logout
                 </button>
               ) : (
                 <Link
                   to="/login"
-                  className="ml-3 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+                  className="btn-primary"
                 >
                   Login
                 </Link>

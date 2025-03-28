@@ -245,24 +245,24 @@ const postSlice = createSlice({
       // Update like in all places
       .addCase(toggleLike.fulfilled, (state, action) => {
         const updatedPost = action.payload;
-        // Update in posts list
-        state.posts = state.posts.map(post => {
-          if (post._id === updatedPost._id) {
-            // Keep some existing post properties that might not be in the response
-            return {
-              ...post,
-              ...updatedPost,
-              userId: updatedPost.userId || post.userId
-            };
-          }
-          return post;
-        });
+
+      // Update in posts list with the complete updated post data
+      state.posts = state.posts.map(post => {
+        if (post._id === updatedPost._id) {
+          return {
+            ...post,
+            ...updatedPost,
+            userId: updatedPost.userId || post.userId
+          };
+        }
+        return post;
+      });
+
         // Update in current post if viewing details
         if (state.currentPost?._id === updatedPost._id) {
           state.currentPost = {
             ...state.currentPost,
-            ...updatedPost,
-            userId: updatedPost.userId || state.currentPost.userId
+            likes: updatedPost.likes
           };
         }
       })

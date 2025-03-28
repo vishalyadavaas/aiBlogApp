@@ -15,19 +15,19 @@ const PostCard = ({ post, onPostUpdated, isProfilePage, onSaveToggle }) => {
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const { user } = useSelector(state => state.auth);
   const [isSaving, setIsSaving] = useState(false);
-  const [postState, setPostState] = useState(post);
+  const [localState, setLocalState] = useState(post);
+  const [localLikes, setLocalLikes] = useState(post.likes || []);
   const { filter } = useSelector(state => state.posts);
   const dispatch = useDispatch();
   
-  // Sync local state with prop changes
+  // Sync local state and likes with prop changes
   useEffect(() => {
-    setPostState(post);
-    console.log('Post State:', post);
-    console.log('Author ID:', post.userId?._id);
+    setLocalState(post);
+    setLocalLikes(post.likes || []);
   }, [post]);
   
   // Determine if post is liked by current user
-  const isLiked = user && postState.likes?.includes(user._id);
+  const isLiked = Boolean(user && localLikes.includes(user._id));
   
   const handleLike = async () => {
     if (!user) {
@@ -39,19 +39,17 @@ const PostCard = ({ post, onPostUpdated, isProfilePage, onSaveToggle }) => {
       setIsLiking(true);
       
       // Optimistic update for better UX
-      const wasLiked = isLiked;
-      setPostState(prev => ({
-        ...prev,
-        likes: wasLiked 
-          ? prev.likes.filter(id => id !== user._id)
-          : [...prev.likes, user._id]
-      }));
+      setLocalLikes(prev => 
+        isLiked 
+          ? prev.filter(id => id !== user._id)
+          : [...prev, user._id]
+      );
       
       // Make API call
-      const response = await dispatch(toggleLike(postState._id)).unwrap();
+      const response = await dispatch(toggleLike(localState._id)).unwrap();
       
       // Update with server data
-      setPostState(response);
+      setLocalLikes(response.likes);
       
       // Notify parent component if needed
       if (onPostUpdated) {
@@ -61,7 +59,7 @@ const PostCard = ({ post, onPostUpdated, isProfilePage, onSaveToggle }) => {
     } catch (error) {
       // Revert optimistic update on error
       toast.error('Failed to like post');
-      setPostState(post);
+      setLocalLikes(post.likes || []);
     } finally {
       setIsLiking(false);
     }
@@ -77,21 +75,21 @@ const PostCard = ({ post, onPostUpdated, isProfilePage, onSaveToggle }) => {
       setIsSaving(true);
       
       // Store current save state
-      const wasSaved = postState.isUserSaved;
+      const wasSaved = localState.isUserSaved;
       
       // Optimistic update
-      setPostState(prev => ({
+      setLocalState(prev => ({
         ...prev,
         isUserSaved: !prev.isUserSaved
       }));
       
       // Make API call
-      const { savedPosts } = await dispatch(toggleSavePost(postState._id)).unwrap();
+      const { savedPosts } = await dispatch(toggleSavePost(localState._id)).unwrap();
       
-      // Update post state based on server response
-      setPostState(prev => ({
+      // Update local state based on server response
+      setLocalState(prev => ({
         ...prev,
-        isUserSaved: savedPosts.includes(postState._id)
+        isUserSaved: savedPosts.includes(localState._id)
       }));
       
       toast.success(wasSaved ? 'Post unsaved' : 'Post saved');
@@ -109,7 +107,7 @@ const PostCard = ({ post, onPostUpdated, isProfilePage, onSaveToggle }) => {
     } catch (error) {
       // Revert optimistic update on error
       toast.error('Failed to save post');
-      setPostState(post);
+      setLocalState(post);
     } finally {
       setIsSaving(false);
     }
@@ -119,25 +117,25 @@ const PostCard = ({ post, onPostUpdated, isProfilePage, onSaveToggle }) => {
     <div className="card p-6 mb-4 animate-fade-in">
       {/* Author info */}
       <div className="flex items-center justify-between mb-4">
-        {postState.userId ? (
+        {localState.userId ? (
           <>
             <div className="flex items-center">
-              <Link to={`/profile/${postState.userId._id}`}>
+              <Link to={`/profile/${localState.userId._id}`}>
                 <img
-                  src={postState.userId.profilePic || 'https://via.placeholder.com/40'}
-                  alt={postState.userId.name}
+                  src={localState.userId.profilePic || 'https://via.placeholder.com/40'}
+                  alt={localState.userId.name}
                   className="w-10 h-10 rounded-full object-cover"
                 />
               </Link>
               <div className="ml-3">
                 <Link
-                  to={`/profile/${postState.userId._id}`}
+                  to={`/profile/${localState.userId._id}`}
                   className="font-medium text-gray-900 dark:text-white hover:underline"
                 >
-                  {postState.userId.name}
+                  {localState.userId.name}
                 </Link>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {formatDistanceToNow(new Date(postState.createdAt), { addSuffix: true })}
+                  {formatDistanceToNow(new Date(localState.createdAt), { addSuffix: true })}
                 </p>
               </div>
             </div>
@@ -154,7 +152,7 @@ const PostCard = ({ post, onPostUpdated, isProfilePage, onSaveToggle }) => {
                 Anonymous
               </span>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {formatDistanceToNow(new Date(postState.createdAt), { addSuffix: true })}
+                {formatDistanceToNow(new Date(localState.createdAt), { addSuffix: true })}
               </p>
             </div>
           </>
@@ -163,7 +161,7 @@ const PostCard = ({ post, onPostUpdated, isProfilePage, onSaveToggle }) => {
 
       {/* Post title */}
       <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-        {postState.title}
+        {localState.title}
       </h3>
 
       {/* Post content */}
@@ -171,11 +169,11 @@ const PostCard = ({ post, onPostUpdated, isProfilePage, onSaveToggle }) => {
         <div 
           className="text-gray-600 dark:text-gray-300 line-clamp-3 mb-2 prose dark:prose-invert"
           dangerouslySetInnerHTML={{ 
-            __html: postState.content.replace(/<[^>]*>/g, '').substring(0, 300) + '...'
+            __html: localState.content.replace(/<[^>]*>/g, '').substring(0, 300) + '...'
           }}
         />
         <Link 
-          to={`/post/${postState._id}`}
+          to={`/post/${localState._id}`}
           className="inline-block text-blue-600 dark:text-blue-400 hover:underline font-medium"
         >
           Read more
@@ -183,9 +181,9 @@ const PostCard = ({ post, onPostUpdated, isProfilePage, onSaveToggle }) => {
       </div>
 
       {/* Post image if exists */}
-      {postState.image && (
+      {localState.image && (
         <img
-          src={postState.image}
+          src={localState.image}
           alt="Post"
           className="w-full h-48 object-cover rounded-lg mb-4"
         />
@@ -213,17 +211,17 @@ const PostCard = ({ post, onPostUpdated, isProfilePage, onSaveToggle }) => {
                 <span className={`transition-all duration-200 ${
                   isLiked ? 'text-red-500 dark:text-red-400' : ''
                 }`}>
-                  {postState.likes?.length || 0}
+                  {localLikes?.length || 0}
                 </span>
               </>
             )}
           </button>
           <Link 
-            to={`/post/${postState._id}`}
+            to={`/post/${localState._id}`}
             className="flex items-center space-x-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
           >
             <FiMessageSquare />
-            <span>{postState.comments?.length || 0}</span>
+            <span>{localState.comments?.length || 0}</span>
           </Link>
           {user && (
             <button
@@ -233,7 +231,7 @@ const PostCard = ({ post, onPostUpdated, isProfilePage, onSaveToggle }) => {
             >
               {isSaving ? (
                 <LoadingSpinner size="sm" />
-              ) : postState.isUserSaved ? (
+              ) : localState.isUserSaved ? (
                 <MdBookmark className="w-6 h-6 text-blue-500 dark:text-blue-400" />
               ) : (
                 <MdBookmarkBorder className="w-6 h-6" />

@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes gradient-x {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@layer utilities {
+  .animate-gradient-x {
+    animation: gradient-x 3s ease infinite;
+    background-size: 200% 200%;
+  }
+}
+
 @layer components {
   .card {
     @apply bg-white dark:bg-gray-800 shadow-lg rounded-xl transition-all duration-200 hover:shadow-xl border border-gray-200 dark:border-gray-700;

@@ -109,7 +109,13 @@ const HomePage = () => {
             ref={index === posts.length - 1 ? lastPostRef : null}
             className="animate-fadeIn"
           >
-            <PostCard post={post} />
+            <PostCard 
+              post={post}
+              onPostUpdated={() => {
+                // Fetch fresh data to ensure all posts are up to date
+                dispatch(getPosts({ page: 1, filter })).unwrap();
+              }}
+            />
           </div>
         ))}
 
