@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1d4ed8" />
+    <meta name="description" content="AI-powered blogging platform - Write, share, and discover content" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://aiblog.app/" />
+    <meta property="og:title" content="AiBlog - AI-Powered Blogging Platform" />
+    <meta property="og:description" content="Write, share, and discover content with AI assistance" />
+    <meta property="og:image" content="/og-image.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://aiblog.app/" />
+    <meta property="twitter:title" content="AiBlog - AI-Powered Blogging Platform" />
+    <meta property="twitter:description" content="Write, share, and discover content with AI assistance" />
+    <meta property="twitter:image" content="/og-image.png" />
+
+    <!-- PWA support -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icon-192x192.png" />
+    
+    <!-- Preconnect to API domain -->
+    <link rel="preconnect" href="https://api.aiblog.app" />
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>AiBlog - AI-Powered Blogging Platform</title>
+
+    <!-- Prevent flash of unstyled content -->
+    <script>
+      // Check for saved theme preference, otherwise get OS preference
+      const theme = localStorage.getItem('theme') || 
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      
+      // Add dark class to html element if needed
+      if (theme === 'dark') document.documentElement.classList.add('dark');
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
