@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://aiblog-backend-production.up.railway.app/api';
+const API_URL = 'https://aiblog-backend-production-6260.up.railway.app/api';
 
 // Create axios instance
 const api = axios.create({
