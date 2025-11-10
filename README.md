@@ -16,9 +16,6 @@ A modern, intelligent blogging platform powered by AI and built with the MERN st
 
 </div>
 
----
-
-🌐 **Live Demo:** [https://aiblogapp-vishalyadvaas.netlify.app/](https://aiblogapp-vishalyadvaas.netlify.app/)
 
 ## ✨ Features
 
