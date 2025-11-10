@@ -67,7 +67,7 @@ Use Google Search when you need current information, latest news, or up-to-date 
     try {
       // Generate blog content with streaming using Google Gemini
       const result = streamText({
-        model: google('gemini-2.0-flash-exp'),
+        model: google('gemini-2.5-flash-lite'),
         messages: convertToModelMessages(messages),
         system: instruction,
         tools: {

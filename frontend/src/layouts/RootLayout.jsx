@@ -1,16 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { FiHome, FiPlusSquare, FiUser, FiMenu, FiLogOut, FiLogIn, FiSearch } from 'react-icons/fi';
+import { FiHome, FiPlusSquare, FiUser, FiMenu, FiLogOut, FiLogIn, FiSearch, FiMessageCircle } from 'react-icons/fi';
 import { logout } from '../features/auth/authSlice';
 import { users } from '../utils/api';
 import Footer from '../components/common/Footer';
+import ChatbotUI from '../components/ai/ChatbotUI';
 
 const RootLayout = () => {
+  // State declarations
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [userStats, setUserStats] = useState(null);
-  const [loadingStats, setLoadingStats] = useState(false);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const { user, isInitialized } = useSelector(state => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -81,6 +84,14 @@ const RootLayout = () => {
   const navLinks = [
     { path: '/', icon: <FiHome />, label: 'Home', description: 'Latest posts' },
     { path: '/create', icon: <FiPlusSquare />, label: 'Create', description: 'Write a new post' },
+    { 
+      path: '#', 
+      icon: <FiMessageCircle />, 
+      label: 'AI Chatbot', 
+      description: 'Chat with AI',
+      isButton: true,
+      onClick: () => setIsChatbotOpen(true)
+    },
     { path: `/profile/${user?._id}`, icon: <FiUser />, label: 'Profile', description: 'Your profile' },
   ];
 
@@ -203,55 +214,92 @@ const RootLayout = () => {
             <ul className="space-y-2 font-medium mb-4">
               {navLinks.map((link, index) => (
                 <li key={link.path} className="animate-slideInLeft" style={{animationDelay: `${index * 0.1}s`}}>
-                  <Link
-                    to={link.path}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`
-                      relative flex items-center space-x-3 p-3 rounded-xl transition-all duration-300 group
-                      ${location.pathname === link.path
-                        ? 'bg-gradient-to-r from-blue-500/80 via-purple-500/60 to-pink-500/40 text-white shadow-lg shadow-blue-500/20 border border-blue-400/30 transform scale-102'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-500/10 hover:via-purple-500/10 hover:to-pink-500/10 hover:text-gray-900 dark:hover:text-white border border-transparent hover:border-blue-300/30 hover:shadow-md'
-                      }
-                    `}
-                  >
-                    {/* Active indicator */}
-                    {location.pathname === link.path && (
-                      <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-gradient-to-b from-blue-400 to-purple-500 rounded-r-full"></div>
-                    )}
-                    
-                    {/* Icon */}
-                    <div className={`
-                      text-lg transition-all duration-300 
-                      ${location.pathname === link.path 
-                        ? 'text-white drop-shadow-sm' 
-                        : 'text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400'
-                      }
-                    `}>
-                      {link.icon}
-                    </div>
-                    
-                    {/* Text content */}
-                    <div className="flex-1 min-w-0">
+                  {link.isButton ? (
+                    <button
+                      onClick={() => {
+                        link.onClick();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`
+                        relative flex items-center space-x-3 p-3 rounded-xl transition-all duration-300 group w-full text-left
+                        text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-green-500/10 hover:via-teal-500/10 hover:to-cyan-500/10 hover:text-gray-900 dark:hover:text-white border border-transparent hover:border-green-300/30 hover:shadow-md
+                      `}
+                    >
+                      {/* Icon */}
                       <div className={`
-                        font-medium text-sm transition-all duration-300 truncate
+                        text-lg transition-all duration-300 
+                        text-green-600 dark:text-green-400 group-hover:text-green-600 dark:group-hover:text-green-400
+                      `}>
+                        {link.icon}
+                      </div>
+                      
+                      {/* Text content */}
+                      <div className="flex-1 min-w-0">
+                        <div className={`
+                          font-medium text-sm transition-all duration-300 truncate
+                          text-gray-900 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white
+                        `}>
+                          {link.label}
+                        </div>
+                        <div className={`
+                          text-xs transition-all duration-300 truncate
+                          text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300
+                        `}>
+                          {link.description}
+                        </div>
+                      </div>
+                    </button>
+                  ) : (
+                    <Link
+                      to={link.path}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`
+                        relative flex items-center space-x-3 p-3 rounded-xl transition-all duration-300 group
+                        ${location.pathname === link.path
+                          ? 'bg-gradient-to-r from-blue-500/80 via-purple-500/60 to-pink-500/40 text-white shadow-lg shadow-blue-500/20 border border-blue-400/30 transform scale-102'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-500/10 hover:via-purple-500/10 hover:to-pink-500/10 hover:text-gray-900 dark:hover:text-white border border-transparent hover:border-blue-300/30 hover:shadow-md'
+                        }
+                      `}
+                    >
+                      {/* Active indicator */}
+                      {location.pathname === link.path && (
+                        <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-gradient-to-b from-blue-400 to-purple-500 rounded-r-full"></div>
+                      )}
+                      
+                      {/* Icon */}
+                      <div className={`
+                        text-lg transition-all duration-300 
                         ${location.pathname === link.path 
-                          ? 'text-white' 
-                          : 'text-gray-900 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white'
+                          ? 'text-white drop-shadow-sm' 
+                          : 'text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400'
                         }
                       `}>
-                        {link.label}
+                        {link.icon}
                       </div>
-                      <div className={`
-                        text-xs transition-all duration-300 truncate
-                        ${location.pathname === link.path 
-                          ? 'text-blue-100' 
-                          : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300'
-                        }
-                      `}>
-                        {link.description}
+                      
+                      {/* Text content */}
+                      <div className="flex-1 min-w-0">
+                        <div className={`
+                          font-medium text-sm transition-all duration-300 truncate
+                          ${location.pathname === link.path 
+                            ? 'text-white' 
+                            : 'text-gray-900 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white'
+                          }
+                        `}>
+                          {link.label}
+                        </div>
+                        <div className={`
+                          text-xs transition-all duration-300 truncate
+                          ${location.pathname === link.path 
+                            ? 'text-blue-100' 
+                            : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300'
+                          }
+                        `}>
+                          {link.description}
+                        </div>
                       </div>
-                    </div>
-                  </Link>
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -321,6 +369,12 @@ const RootLayout = () => {
           </form>
         </div>
       )}
+
+      {/* Chatbot UI */}
+      <ChatbotUI 
+        isOpen={isChatbotOpen} 
+        onClose={() => setIsChatbotOpen(false)} 
+      />
     </div>
   );
 };

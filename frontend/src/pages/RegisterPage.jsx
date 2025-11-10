@@ -48,10 +48,10 @@ const RegisterPage = () => {
   };
 
   const features = [
-    { icon: <FiZap />, title: 'AI-Powered Creation', description: 'Generate amazing content with AI assistance', color: 'from-blue-500 to-cyan-500' },
-    { icon: <FiHeart />, title: 'Creative Community', description: 'Connect with like-minded creators worldwide', color: 'from-purple-500 to-pink-500' },
-    { icon: <FiCpu />, title: 'Smart Analytics', description: 'Track your content performance and engagement', color: 'from-orange-500 to-yellow-500' },
-    { icon: <FiUsers />, title: 'Global Network', description: 'Join thousands of passionate content creators', color: 'from-green-500 to-emerald-500' },
+    { icon: <FiCpu />, title: 'AI Chatbot Assistant', description: 'Get instant help with coding, writing, and problem-solving', color: 'from-blue-500 to-cyan-500' },
+    { icon: <FiHeart />, title: 'Smart Content Creation', description: 'AI-powered blog generation and editing tools', color: 'from-purple-500 to-pink-500' },
+    { icon: <FiZap />, title: 'Code Highlighting', description: 'Beautiful syntax highlighting in chat responses', color: 'from-orange-500 to-yellow-500' },
+    { icon: <FiUsers />, title: 'Creative Community', description: 'Connect with like-minded creators worldwide', color: 'from-green-500 to-emerald-500' },
   ];
 
   const benefits = [

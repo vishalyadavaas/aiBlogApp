@@ -25,9 +25,12 @@ A modern, intelligent blogging platform powered by AI and built with the MERN st
 |---------|-------------|--------|
 | 🔐 **Authentication** | Secure JWT-based user registration & login with enhanced UI | ✅ |
 | 📝 **Smart Content Creation** | AI-powered content generation using Google Gemini | ✅ |
-| 🤖 **AI Chat Interface** | Interactive AI assistant for writing help and suggestions | ✅ |
+| 🤖 **AI Chatbot Assistant** | Interactive AI chatbot for general help, coding assistance, and problem-solving | ✅ |
+| 💬 **Real-time Chat Interface** | Beautiful chat UI with markdown support and syntax highlighting | ✅ |
+| 🎨 **Code Syntax Highlighting** | Colorful code rendering with language-specific highlighting | ✅ |
+| 📋 **Copy Code Feature** | One-click code copying from chat responses | ✅ |
 | 👤 **User Profiles** | Customizable profiles with stats, followers, and posts | ✅ |
-| 🎨 **Dynamic Themes** | Seamless light/dark mode with system preference detection | ✅ |
+| 🎭 **Dynamic Themes** | Seamless light/dark mode with system preference detection | ✅ |
 | 📱 **Mobile Responsive** | Optimized for all devices with modern touch interactions | ✅ |
 | 💾 **Post Management** | Create, edit, delete with auto-save and draft support | ✅ |
 | 🔄 **Real-time Updates** | Live post updates and user interaction feedback | ✅ |
@@ -42,9 +45,11 @@ A modern, intelligent blogging platform powered by AI and built with the MERN st
 
 ### 🤖 **AI Integration**
 - **Google Gemini Integration**: Advanced AI content generation
-- **Interactive Chat Interface**: Real-time AI assistance for writing
-- **Smart Content Suggestions**: AI-powered writing improvements
-- **Context-Aware Responses**: AI understands your writing style
+- **Interactive Chatbot**: Real-time AI assistant for any questions
+- **Smart Problem Solving**: AI helps with coding, explanations, and general queries
+- **Beautiful Chat Interface**: Modern UI with syntax highlighting
+- **Code Assistance**: Colorful code blocks with copy functionality
+- **Context-Aware Responses**: AI understands conversation context
 
 ### 🎨 **Enhanced UI/UX**
 - **Modern Glassmorphism Design**: Beautiful translucent interfaces
