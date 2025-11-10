@@ -148,7 +148,16 @@ const MarkdownResponse = memo(({ children, className = '', darkMode = false }) =
           const language = match ? match[1] : 'text';
           const code = String(children).replace(/\n$/, '');
           
-          return !inline ? (
+          // Only render as code block if it's explicitly marked as code or has specific patterns
+          // This prevents regular text from becoming code blocks
+          const shouldRenderAsBlock = !inline && (
+            className || // Has language class
+            code.includes('\n') || // Multiple lines
+            code.length > 50 || // Long single line
+            /^(function|class|const|let|var|if|for|while|def|import|from|#include|public|private)\s/.test(code) // Code keywords
+          );
+          
+          return shouldRenderAsBlock ? (
             <CodeBlock language={language} code={code} darkMode={darkMode} />
           ) : (
             <code 
