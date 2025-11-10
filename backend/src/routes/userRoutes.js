@@ -14,7 +14,8 @@ const {
   getSavedPosts,
   deleteAccount,
   getProfile,
-  getUserPosts
+  getUserPosts,
+  getUserStats
 } = require('../controllers/userController');
 
 // Create uploads directory if it doesn't exist
@@ -56,6 +57,7 @@ const upload = multer({
     .put(auth, upload.single('profilePic'), updateProfile)
     .delete(auth, deleteAccount);
 
+  router.get('/stats', auth, getUserStats);
   router.get('/saved/posts', auth, getSavedPosts);
   router.post('/posts/:postId/save', auth, toggleSavePost);
   router.get('/posts', auth, getUserPosts);

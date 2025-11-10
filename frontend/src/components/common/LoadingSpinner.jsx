@@ -1,5 +1,6 @@
 const LoadingSpinner = ({ size = 'md', light = false }) => {
   const sizeClasses = {
+    xs: 'w-3 h-3 border',
     sm: 'w-4 h-4 border',
     md: 'w-6 h-6 border-2',
     lg: 'w-8 h-8 border-2',

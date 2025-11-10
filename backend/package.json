@@ -9,6 +9,9 @@
     "test": "jest"
   },
   "dependencies": {
+    "@ai-sdk/google": "^2.0.26",
+    "@ai-sdk/openai": "^2.0.60",
+    "ai": "^5.0.86",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.6.0",
     "cookie-parser": "^1.4.6",

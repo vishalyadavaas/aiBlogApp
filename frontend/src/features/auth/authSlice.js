@@ -15,6 +15,31 @@ const initialState = {
   followers: [],
 };
 
+// Get current user from server (with fresh data including savedPosts)
+export const getCurrentUser = createAsyncThunk(
+  'auth/getCurrentUser',
+  async (_, thunkAPI) => {
+    try {
+      const response = await fetch('http://localhost:5001/api/auth/profile', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch user');
+      }
+      
+      const userData = await response.json();
+      localStorage.setItem('user', JSON.stringify(userData));
+      return userData;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
 // Initialize auth
 export const initializeAuth = createAsyncThunk(
   'auth/initialize',
@@ -22,6 +47,19 @@ export const initializeAuth = createAsyncThunk(
     try {
       const user = JSON.parse(localStorage.getItem('user'));
       const token = localStorage.getItem('token');
+      
+      // If we have a token, fetch fresh user data
+      if (token && user) {
+        try {
+          const freshUser = await thunkAPI.dispatch(getCurrentUser()).unwrap();
+          return { user: freshUser, token };
+        } catch (error) {
+          // If fetching fresh data fails, use cached data
+          console.warn('Using cached user data:', error);
+          return { user, token };
+        }
+      }
+      
       return { user, token };
     } catch (error) {
       return thunkAPI.rejectWithValue('Failed to initialize auth');
@@ -144,6 +182,12 @@ const authSlice = createSlice({
       state.isLoading = false;
       state.error = null;
     },
+    updateSavedPosts: (state, action) => {
+      if (state.user) {
+        state.user.savedPosts = action.payload;
+        localStorage.setItem('user', JSON.stringify(state.user));
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -241,6 +285,14 @@ const authSlice = createSlice({
       .addCase(deleteAccountThunk.rejected, (state, action) => {
         state.error = action.payload;
       })
+      // Get Current User
+      .addCase(getCurrentUser.fulfilled, (state, action) => {
+        state.user = action.payload;
+        localStorage.setItem('user', JSON.stringify(action.payload));
+      })
+      .addCase(getCurrentUser.rejected, (state, action) => {
+        console.warn('Failed to refresh user data:', action.payload);
+      })
       // Initialize Auth
       .addCase(initializeAuth.pending, (state) => {
         state.isLoading = true;
@@ -264,7 +316,7 @@ const authSlice = createSlice({
 });
 
 // Selectors
-export const getCurrentUser = (state) => state.auth.user;
+export const getCurrentUserData = (state) => state.auth.user;
 
-export const { reset } = authSlice.actions;
+export const { reset, updateSavedPosts } = authSlice.actions;
 export default authSlice.reducer;

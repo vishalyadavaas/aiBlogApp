@@ -5,10 +5,10 @@ import { generateContent } from '../../utils/aiHelpers';
 // Generate post content using AI
 export const generatePostContent = createAsyncThunk(
   'posts/generateContent',
-  async ({ prompt, options = {} }, thunkAPI) => {
+  async ({ prompt, format = 'text-only' }, thunkAPI) => {
     try {
-      console.log('Generating content with prompt:', prompt);
-      const generated = await generateContent(prompt, options);
+      console.log('Generating content with prompt:', prompt, 'format:', format);
+      const generated = await generateContent(prompt, { format });
       console.log('Content generated successfully:', generated);
       return generated;
     } catch (error) {
@@ -58,9 +58,9 @@ export const createPost = createAsyncThunk(
 // Get all posts
 export const getPosts = createAsyncThunk(
   'posts/getAll',
-  async ({ page = 1, limit = 10, filter = 'all' }, thunkAPI) => {
+  async ({ page = 1, limit = 10, filter = 'all', search = '' }, thunkAPI) => {
     try {
-      const response = await posts.getAll(page, limit, filter);
+      const response = await posts.getAll(page, limit, filter, search);
       return response.data;
     } catch (error) {
       const message = error.response?.data?.message || error.message;

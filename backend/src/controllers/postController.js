@@ -38,8 +38,30 @@ const getPosts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 5;
     const skip = (page - 1) * limit;
     const filter = req.query.filter || 'all';
+    const search = req.query.search;
 
     let query = {};
+    
+    // Handle search functionality
+    if (search) {
+      // Find users matching the search query
+      const matchingUsers = await User.find({
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ]
+      }).select('_id').lean();
+      
+      const matchingUserIds = matchingUsers.map(user => user._id);
+      
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { content: { $regex: search, $options: 'i' } },
+        { tags: { $in: [new RegExp(search, 'i')] } },
+        // Search posts by matching users
+        { userId: { $in: matchingUserIds } }
+      ];
+    }
     
     // Handle filtering based on authentication and filter type
     if (req.user && filter === 'following') {
@@ -59,7 +81,14 @@ const getPosts = async (req, res) => {
       }
 
       // Filter to show only posts from followed users
-      query = { userId: { $in: currentUser.following } };
+      const followingQuery = { userId: { $in: currentUser.following } };
+      
+      // Combine search and following filters
+      if (search) {
+        query = { $and: [query, followingQuery] };
+      } else {
+        query = followingQuery;
+      }
     }
 
     // For 'all' filter or unauthenticated users, query remains empty to show all posts

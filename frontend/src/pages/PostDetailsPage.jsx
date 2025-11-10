@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { formatDistanceToNow } from 'date-fns';
-import { FiHeart, FiMessageSquare, FiArrowLeft, FiTrash2, FiEdit, FiSend } from 'react-icons/fi';
+import { FiHeart, FiMessageSquare, FiArrowLeft, FiTrash2, FiEdit, FiSend, FiClock } from 'react-icons/fi';
 import { MdBookmark, MdBookmarkBorder, MdFavorite, MdFavoriteBorder } from 'react-icons/md';
 import PostEditor from '../components/posts/PostEditor';
+import MarkdownResponse from '../components/common/MarkdownResponse';
 import { posts } from '../utils/api';
 import CenteredLoader from '../components/common/CenteredLoader';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { toast } from 'react-toastify';
 import { getPostById, toggleSavePost, toggleLike } from '../features/posts/postSlice';
+import { updateSavedPosts, getCurrentUser } from '../features/auth/authSlice';
 
 const PostDetailsPage = () => {
   const dispatch = useDispatch();
@@ -25,13 +27,18 @@ const PostDetailsPage = () => {
   
   const { user } = useSelector(state => state.auth);
   const { currentPost: post, isLoading: loading } = useSelector(state => state.posts);
+  const { mode: themeMode } = useSelector(state => state.theme) || { mode: 'light' };
   const [editedPost, setEditedPost] = useState(null);
   const [localPost, setLocalPost] = useState(null);
 
   // Load the post and keep track of local state
   useEffect(() => {
     dispatch(getPostById(id));
-  }, [dispatch, id]);
+    // Refresh user data to get latest savedPosts
+    if (user) {
+      dispatch(getCurrentUser());
+    }
+  }, [dispatch, id, user?._id]);
 
   // Sync local state with Redux changes
   useEffect(() => {
@@ -109,15 +116,21 @@ const PostDetailsPage = () => {
     try {
       setIsSaving(true);
       
-      // Optimistic update
-      const wasSaved = localPost.isUserSaved;
+      // Optimistic update using robust check
+      const wasSaved = isPostSaved;
       setLocalPost(prev => ({
         ...prev,
-        isUserSaved: !prev.isUserSaved
+        isUserSaved: !wasSaved
       }));
       
       // API call
       const { savedPosts } = await dispatch(toggleSavePost(id)).unwrap();
+      
+      // Update auth state with saved posts
+      dispatch(updateSavedPosts(savedPosts));
+      
+      // Also refresh user data to ensure sync
+      dispatch(getCurrentUser());
       
       // Update with server state
       setLocalPost(prev => ({
@@ -144,13 +157,18 @@ const PostDetailsPage = () => {
     try {
       setIsLiking(true);
       
-      // Optimistic update
-      const isCurrentlyLiked = localPost.likes?.includes(user._id);
+      // Optimistic update using robust like checking
+      const isCurrentlyLiked = localPost.likes && localPost.likes.some(like => 
+        like?.toString() === user._id || like?._id === user._id
+      );
+      
+      const optimisticLikes = isCurrentlyLiked 
+        ? localPost.likes.filter(like => like?.toString() !== user._id && like?._id !== user._id)
+        : [...(localPost.likes || []), user._id];
+      
       setLocalPost(prev => ({
         ...prev,
-        likes: isCurrentlyLiked 
-          ? prev.likes.filter(id => id !== user._id)
-          : [...prev.likes, user._id]
+        likes: optimisticLikes
       }));
       
       // API call
@@ -182,14 +200,37 @@ const PostDetailsPage = () => {
     );
   }
 
-  const isLiked = localPost.likes?.includes(user?._id);
+  const isLiked = Boolean(
+    user && localPost.likes && localPost.likes.some(like => 
+      like?.toString() === user._id || like?._id === user._id
+    )
+  );
+
+  // Robust save state check - check both localPost.isUserSaved and user's savedPosts array
+  const isPostSaved = Boolean(
+    user && localPost && (
+      localPost.isUserSaved || 
+      (user.savedPosts && user.savedPosts.some(savedPostId => 
+        savedPostId?.toString() === localPost._id || savedPostId?._id === localPost._id
+      ))
+    )
+  );
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
-      <Link to="/" className="flex items-center text-gray-600 dark:text-gray-400 mb-6 hover:text-gray-900 dark:hover:text-white">
-        <FiArrowLeft className="mr-2" />
-        Back to feed
-      </Link>
+    <div className={`min-h-screen transition-colors duration-300 ${
+      themeMode === 'dark' 
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-black'
+        : 'bg-gradient-to-br from-gray-50 via-blue-50/30 to-white'
+    }`}>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-6xl">
+        <Link to="/" className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg mb-8 transition-all duration-300 ${
+          themeMode === 'dark'
+            ? 'text-gray-300 hover:text-white bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700 hover:border-gray-600'
+            : 'text-gray-600 hover:text-gray-900 bg-white/50 hover:bg-white border border-gray-200 hover:border-gray-300'
+        } backdrop-blur-sm shadow-lg hover:shadow-xl hover:scale-105`}>
+          <FiArrowLeft className="w-4 h-4" />
+          <span>Back to feed</span>
+        </Link>
 
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">
@@ -252,23 +293,30 @@ const PostDetailsPage = () => {
           </div>
         </div>
       ) : (
-        <div 
-          className="prose dark:prose-invert max-w-none mb-8"
-          dangerouslySetInnerHTML={{ __html: localPost.content }}
-        />
+        <div className="mb-8 w-full">
+          <MarkdownResponse darkMode={themeMode === 'dark'} className="w-full !max-w-none overflow-hidden">
+            {localPost.content}
+          </MarkdownResponse>
+        </div>
       )}
 
-      <div className="flex items-center justify-between border-t dark:border-gray-700 pt-4">
-        <div className="flex items-center space-x-6">
+      <div className={`flex items-center justify-between border-t-2 pt-6 mt-8 ${
+        themeMode === 'dark' ? 'border-gray-700' : 'border-gray-200'
+      }`}>
+        <div className="flex items-center space-x-4">
           {localPost.userId?._id === user?._id && (
             <>
               <button
                 onClick={handleEdit}
-                className="flex items-center space-x-2 text-blue-500 hover:text-blue-600 transition-colors"
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
+                  themeMode === 'dark'
+                    ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25'
+                    : 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg shadow-blue-500/25'
+                } transform hover:scale-105 disabled:opacity-50`}
                 disabled={isSubmitting}
               >
-                <FiEdit className="w-5 h-5" />
-                <span>{editing ? 'Cancel Edit' : 'Edit Post'}</span>
+                <FiEdit className="w-4 h-4" />
+                <span className="font-medium">{editing ? 'Cancel Edit' : 'Edit Post'}</span>
               </button>
               <button
                 onClick={async () => {
@@ -282,17 +330,29 @@ const PostDetailsPage = () => {
                     }
                   }
                 }}
-                className="flex items-center space-x-2 text-red-500 hover:text-red-600 transition-colors"
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
+                  themeMode === 'dark'
+                    ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/25'
+                    : 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/25'
+                } transform hover:scale-105`}
               >
-                <FiTrash2 className="w-5 h-5" />
-                <span>Delete Post</span>
+                <FiTrash2 className="w-4 h-4" />
+                <span className="font-medium">Delete Post</span>
               </button>
             </>
           )}
           <button
             onClick={handleLike}
             disabled={isLiking}
-            className="flex items-center space-x-2"
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
+              isLiked
+                ? themeMode === 'dark'
+                  ? 'bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 shadow-lg shadow-red-500/10'
+                  : 'bg-red-50 hover:bg-red-100 border border-red-200 shadow-lg shadow-red-500/10'
+                : themeMode === 'dark'
+                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-600'
+                  : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
+            } transform hover:scale-105`}
           >
             {isLiking ? (
               <LoadingSpinner size="sm" />
@@ -300,59 +360,93 @@ const PostDetailsPage = () => {
               <>
                 <div className="w-6 h-6 flex items-center justify-center">
                   {isLiked ? (
-                    <MdFavorite className="w-6 h-6 text-red-500 dark:text-red-400" />
+                    <MdFavorite className="w-6 h-6" style={{ color: '#ef4444' }} />
                   ) : (
                     <MdFavoriteBorder className="w-6 h-6 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors" />
                   )}
                 </div>
-                <span className={isLiked ? "text-red-500 dark:text-red-400" : "text-gray-500 dark:text-gray-400"}>
+                <span className={isLiked ? "font-medium" : "text-gray-500 dark:text-gray-400"} style={isLiked ? { color: '#ef4444' } : {}}>
                   {localPost.likes?.length || 0}
                 </span>
               </>
             )}
           </button>
-          <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400">
-            <FiMessageSquare />
-            <span>{localPost.comments?.length || 0}</span>
+          <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
+            themeMode === 'dark'
+              ? 'bg-gray-700/50 text-gray-300 border border-gray-600/50'
+              : 'bg-gray-50 text-gray-600 border border-gray-200'
+          }`}>
+            <FiMessageSquare className="w-6 h-6" />
+            <span className="font-medium">{localPost.comments?.length || 0}</span>
           </div>
         </div>
         {user && (
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center hover:text-gray-700 dark:hover:text-gray-300"
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
+              isPostSaved
+                ? themeMode === 'dark'
+                  ? 'bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 border border-yellow-500/30 shadow-lg shadow-yellow-500/10'
+                  : 'bg-yellow-50 hover:bg-yellow-100 text-yellow-600 border border-yellow-200 shadow-lg shadow-yellow-500/10'
+                : themeMode === 'dark'
+                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-600'
+                  : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
+            } transform hover:scale-105`}
           >
             {isSaving ? (
               <LoadingSpinner size="sm" />
-            ) : localPost.isUserSaved ? (
-              <MdBookmark className="w-6 h-6 text-blue-500 dark:text-blue-400" />
             ) : (
-              <MdBookmarkBorder className="w-6 h-6" />
+              <>
+                <div className="w-6 h-6 flex items-center justify-center">
+                  {isPostSaved ? (
+                    <MdBookmark className="w-6 h-6" style={{ color: '#eab308' }} />
+                  ) : (
+                    <MdBookmarkBorder className="w-6 h-6 text-gray-500 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 transition-colors" />
+                  )}
+                </div>
+                <span className={isPostSaved ? "font-medium" : "text-gray-500 dark:text-gray-400"} style={isPostSaved ? { color: '#eab308' } : {}}>
+                  {isPostSaved ? 'Saved' : 'Save'}
+                </span>
+              </>
             )}
           </button>
         )}
       </div>
 
-      <div className="mt-8 border-t dark:border-gray-700 pt-6">
-        <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-          Comments ({localPost.comments?.length || 0})
+      <div className={`mt-8 border-t pt-6 ${
+        themeMode === 'dark' 
+          ? 'border-gray-700' 
+          : 'border-gray-200'
+      }`}>
+        <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white flex items-center space-x-2">
+          <FiMessageSquare className="w-5 h-5 text-blue-500" />
+          <span>Comments ({localPost.comments?.length || 0})</span>
         </h3>
         
         {user && (
-          <div className="flex gap-4 mb-6">
+          <div className={`flex gap-4 mb-6 p-4 rounded-xl transition-all duration-300 ${
+            themeMode === 'dark'
+              ? 'bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-700/50 backdrop-blur-sm'
+              : 'bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-sm'
+          }`}>
             <img
               src={user.profilePic || 'https://via.placeholder.com/40'}
               alt={user.name}
-              className="w-10 h-10 rounded-full object-cover"
+              className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-500/20"
             />
             <div className="flex-1">
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Write a comment..."
+                  placeholder="Write a thoughtful comment..."
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className={`w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 ${
+                    themeMode === 'dark'
+                      ? 'border-gray-600 bg-gray-700/50 text-white placeholder-gray-400 backdrop-blur-sm'
+                      : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                  }`}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
@@ -363,7 +457,11 @@ const PostDetailsPage = () => {
                 <button
                   onClick={handleAddComment}
                   disabled={!commentText.trim() || isAddingComment}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-500 hover:text-blue-600 disabled:text-gray-400"
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all duration-300 ${
+                    commentText.trim()
+                      ? 'text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30'
+                      : 'text-gray-400 cursor-not-allowed'
+                  }`}
                 >
                   {isAddingComment ? (
                     <LoadingSpinner size="sm" />
@@ -376,29 +474,33 @@ const PostDetailsPage = () => {
           </div>
         )}
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {localPost.comments?.map((comment) => (
-            <div key={comment._id} className="flex gap-4">
-              <Link to={`/profile/${comment.userId?._id}`}>
+            <div key={comment._id} className={`flex gap-4 group`}>
+              <Link to={`/profile/${comment.userId?._id}`} className="flex-shrink-0">
                 <img
                   src={comment.userId?.profilePic || 'https://via.placeholder.com/40'}
                   alt={comment.userId?.name}
-                  className="w-10 h-10 rounded-full object-cover"
+                  className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-blue-500/30 transition-all duration-300"
                 />
               </Link>
-              <div className="flex-1">
-                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-                  <div className="flex justify-between items-start mb-1">
+              <div className="flex-1 min-w-0">
+                <div className={`p-4 rounded-xl transition-all duration-300 ${
+                  themeMode === 'dark'
+                    ? 'bg-gradient-to-br from-gray-800/60 to-gray-900/60 border border-gray-700/50 backdrop-blur-sm'
+                    : 'bg-gradient-to-br from-gray-50 to-white border border-gray-200 shadow-sm'
+                } group-hover:shadow-md group-hover:border-blue-500/20`}>
+                  <div className="flex justify-between items-start mb-2">
                     <Link
                       to={`/profile/${comment.userId?._id}`}
-                      className="font-medium text-gray-900 dark:text-white hover:underline"
+                      className="font-medium text-gray-900 dark:text-white hover:text-blue-500 dark:hover:text-blue-400 transition-colors duration-300"
                     >
                       {comment.userId?.name}
                     </Link>
                     {(comment.userId?._id === user?._id) && (
                       <button
                         onClick={() => handleDeleteComment(comment._id)}
-                        className="text-red-500 hover:text-red-600 p-1"
+                        className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 p-2 rounded-lg transition-all duration-300"
                         disabled={isDeletingComment}
                       >
                         {isDeletingComment ? (
@@ -409,9 +511,10 @@ const PostDetailsPage = () => {
                       </button>
                     )}
                   </div>
-                  <p className="text-gray-600 dark:text-gray-300">{comment.text}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                  <p className="text-gray-700 dark:text-gray-200 leading-relaxed mb-2">{comment.text}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center space-x-1">
+                    <FiClock className="w-3 h-3" />
+                    <span>{formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}</span>
                   </p>
                 </div>
               </div>
@@ -419,11 +522,20 @@ const PostDetailsPage = () => {
           ))}
           
           {(localPost.comments?.length === 0) && (
-            <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-              No comments yet. Be the first to comment!
+            <div className={`text-center py-8 rounded-xl ${
+              themeMode === 'dark'
+                ? 'bg-gradient-to-br from-gray-800/30 to-gray-900/30 border border-gray-700/30'
+                : 'bg-gradient-to-br from-gray-50/50 to-white/50 border border-gray-200/50'
+            }`}>
+              <FiMessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-500 dark:text-gray-400 font-medium">No comments yet</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                Be the first to share your thoughts!
+              </p>
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

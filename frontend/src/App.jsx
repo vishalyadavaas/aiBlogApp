@@ -8,13 +8,14 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AuthRoute from './components/AuthRoute';
 import RouterConfig from './router/RouterConfig';
 import CenteredLoader from './components/common/CenteredLoader';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Lazy load pages for better performance
 const HomePage = React.lazy(() => import('./pages/HomePage'));
 const LoginPage = React.lazy(() => import('./pages/LoginPage'));
 const RegisterPage = React.lazy(() => import('./pages/RegisterPage'));
-const CreatePostPage = React.lazy(() => import('./pages/CreatePostPage'));
+const CreatePostPage = React.lazy(() => import('./pages/CreatePostPage_AI'));
 const ProfilePage = React.lazy(() => import('./pages/ProfilePage'));
 const PostDetailsPage = React.lazy(() => import('./pages/PostDetailsPage'));
 
@@ -110,21 +111,23 @@ function App() {
   }
 
   return (
-    <React.Suspense fallback={<CenteredLoader fullScreen />}>
-      <RouterProvider router={router} />
-      <ToastContainer
-        position="bottom-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme={mode}
-      />
-    </React.Suspense>
+    <ErrorBoundary>
+      <React.Suspense fallback={<CenteredLoader fullScreen />}>
+        <RouterProvider router={router} />
+        <ToastContainer
+          position="bottom-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme={mode}
+        />
+      </React.Suspense>
+    </ErrorBoundary>
   );
 }
 

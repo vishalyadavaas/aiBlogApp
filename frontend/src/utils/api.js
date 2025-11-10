@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://aiblog-backend-production-6260.up.railway.app/api';
+const API_URL = 'http://localhost:5001/api';
 
 // Create axios instance
 const api = axios.create({
@@ -47,7 +47,13 @@ export const getUserProfile = (userId) => {
 // Posts API calls
 export const posts = {
   create: (postData) => api.post('/posts', postData),
-  getAll: (page = 1, limit = 10, filter = 'all') => api.get(`/posts?page=${page}&limit=${limit}&filter=${filter}`),
+  getAll: (page = 1, limit = 10, filter = 'all', search = '') => {
+    let url = `/posts?page=${page}&limit=${limit}&filter=${filter}`;
+    if (search) {
+      url += `&search=${encodeURIComponent(search)}`;
+    }
+    return api.get(url);
+  },
   getById: (id) => api.get(`/posts/${id}`),
   update: (id, postData) => api.put(`/posts/${id}`, postData),
   delete: (id) => api.delete(`/posts/${id}`),
@@ -64,6 +70,7 @@ export const users = {
     const url = userId ? `/users/${userId}/posts` : '/users/posts';
     return api.get(url);
   },
+  getStats: () => api.get('/users/stats'),
   getFollowers: (userId) => api.get(`/users/${userId}/followers`),
   getFollowing: (userId) => api.get(`/users/${userId}/following`),
   updateProfile: (formData) => 

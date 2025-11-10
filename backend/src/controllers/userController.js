@@ -431,6 +431,43 @@ const getUserPosts = async (req, res) => {
   }
 };
 
+// @desc    Get user stats
+// @route   GET /api/users/stats
+// @access  Private
+const getUserStats = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    
+    // Get user's post count
+    const userPostsCount = await Post.countDocuments({ userId });
+    
+    // Get total posts in system
+    const totalPostsCount = await Post.countDocuments();
+    
+    // Get user's total likes received
+    const userPosts = await Post.find({ userId }).select('likes');
+    const totalLikesReceived = userPosts.reduce((total, post) => total + (post.likes?.length || 0), 0);
+    
+    // Get user data for followers/following count
+    const user = await User.findById(userId).select('followers following savedPosts');
+    
+    // Get user's saved posts count
+    const savedPostsCount = user.savedPosts?.length || 0;
+    
+    res.json({
+      userPosts: userPostsCount,
+      totalPosts: totalPostsCount,
+      totalLikesReceived,
+      savedPosts: savedPostsCount,
+      followers: user.followers?.length || 0,
+      following: user.following?.length || 0
+    });
+  } catch (error) {
+    console.error('Error getting user stats:', error);
+    res.status(500).json({ message: 'Failed to get user stats' });
+  }
+};
+
 module.exports = {
   updateProfile,
   followUser,
@@ -441,5 +478,6 @@ module.exports = {
   getSavedPosts,
   deleteAccount,
   getProfile,
-  getUserPosts
+  getUserPosts,
+  getUserStats
 };

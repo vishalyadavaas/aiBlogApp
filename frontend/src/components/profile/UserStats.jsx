@@ -13,6 +13,7 @@ const UserStats = ({ stats, userId, onFollowUser, readOnly }) => {
   const [showUnfollow, setShowUnfollow] = useState({});
   const dispatch = useDispatch();
   const { user: currentUser } = useSelector(state => state.auth);
+  const { mode: themeMode } = useSelector(state => state.theme) || { mode: 'light' };
   
   const handleFollowUnfollow = async (targetUserId, isFollowing) => {
     if (userId === targetUserId) return;
@@ -110,23 +111,43 @@ const UserStats = ({ stats, userId, onFollowUser, readOnly }) => {
       >
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all">
-            <div className="flex justify-between items-center mb-4">
-              <Dialog.Title className="text-lg font-medium text-gray-900 dark:text-white">
-                Followers ({stats.followers.length})
-              </Dialog.Title>
-              <button
-                onClick={() => setShowFollowers(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-              >
-                <FiX className="w-5 h-5" />
-              </button>
+          <Dialog.Panel className={`w-full max-w-md transform overflow-hidden rounded-2xl shadow-2xl transition-all border ${
+            themeMode === 'dark'
+              ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-black border-gray-700 shadow-blue-500/10'
+              : 'bg-gradient-to-br from-white via-gray-50 to-blue-50/30 border-gray-200 shadow-xl'
+          } backdrop-blur-sm`}>
+            <div className={`p-6 border-b ${
+              themeMode === 'dark' ? 'border-gray-700' : 'border-gray-200'
+            }`}>
+              <div className="flex justify-between items-center">
+                <Dialog.Title className={`text-lg font-bold ${
+                  themeMode === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>
+                  Followers ({stats.followers.length})
+                </Dialog.Title>
+                <button
+                  onClick={() => setShowFollowers(false)}
+                  className={`transition-colors duration-200 p-1 rounded-lg ${
+                    themeMode === 'dark'
+                      ? 'text-gray-400 hover:text-white hover:bg-gray-700'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <FiX className="w-5 h-5" />
+                </button>
+              </div>
             </div>
-            <div className="max-h-96 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700">
+            <div className={`p-6 max-h-96 overflow-y-auto divide-y ${
+              themeMode === 'dark' ? 'divide-gray-700' : 'divide-gray-200'
+            }`}>
               {stats.followers.map((follower) => (
                 <div
                   key={follower._id}
-                  className="flex items-center justify-between py-3"
+                  className={`flex items-center justify-between py-3 px-2 rounded-lg transition-colors duration-200 ${
+                    themeMode === 'dark'
+                      ? 'hover:bg-gray-800/50'
+                      : 'hover:bg-gray-50'
+                  }`}
                 >
                   <Link
                     to={`/profile/${follower._id}`}
@@ -136,14 +157,18 @@ const UserStats = ({ stats, userId, onFollowUser, readOnly }) => {
                     <img
                       src={follower.profilePic || 'https://via.placeholder.com/40'}
                       alt={follower.name}
-                      className="w-10 h-10 rounded-full object-cover"
+                      className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
                     />
                     <div className="ml-3">
-                      <div className="font-medium text-gray-900 dark:text-white">
+                      <div className={`font-medium ${
+                        themeMode === 'dark' ? 'text-white' : 'text-gray-900'
+                      }`}>
                         {follower.name}
                       </div>
                       {follower.bio && (
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                        <div className={`text-sm ${
+                          themeMode === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
                           {follower.bio.substring(0, 30)}
                           {follower.bio.length > 30 ? '...' : ''}
                         </div>
@@ -173,23 +198,43 @@ const UserStats = ({ stats, userId, onFollowUser, readOnly }) => {
       >
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all">
-            <div className="flex justify-between items-center mb-4">
-              <Dialog.Title className="text-lg font-medium text-gray-900 dark:text-white">
-                Following ({stats.following.length})
-              </Dialog.Title>
-              <button
-                onClick={() => setShowFollowing(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-              >
-                <FiX className="w-5 h-5" />
-              </button>
+          <Dialog.Panel className={`w-full max-w-md transform overflow-hidden rounded-2xl shadow-2xl transition-all border ${
+            themeMode === 'dark'
+              ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-black border-gray-700 shadow-blue-500/10'
+              : 'bg-gradient-to-br from-white via-gray-50 to-blue-50/30 border-gray-200 shadow-xl'
+          } backdrop-blur-sm`}>
+            <div className={`p-6 border-b ${
+              themeMode === 'dark' ? 'border-gray-700' : 'border-gray-200'
+            }`}>
+              <div className="flex justify-between items-center">
+                <Dialog.Title className={`text-lg font-bold ${
+                  themeMode === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>
+                  Following ({stats.following.length})
+                </Dialog.Title>
+                <button
+                  onClick={() => setShowFollowing(false)}
+                  className={`transition-colors duration-200 p-1 rounded-lg ${
+                    themeMode === 'dark'
+                      ? 'text-gray-400 hover:text-white hover:bg-gray-700'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <FiX className="w-5 h-5" />
+                </button>
+              </div>
             </div>
-            <div className="max-h-96 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700">
+            <div className={`p-6 max-h-96 overflow-y-auto divide-y ${
+              themeMode === 'dark' ? 'divide-gray-700' : 'divide-gray-200'
+            }`}>
               {stats.following.map((followed) => (
                 <div
                   key={followed._id}
-                  className="flex items-center justify-between py-3"
+                  className={`flex items-center justify-between py-3 px-2 rounded-lg transition-colors duration-200 ${
+                    themeMode === 'dark'
+                      ? 'hover:bg-gray-800/50'
+                      : 'hover:bg-gray-50'
+                  }`}
                 >
                   <Link
                     to={`/profile/${followed._id}`}
@@ -199,14 +244,18 @@ const UserStats = ({ stats, userId, onFollowUser, readOnly }) => {
                     <img
                       src={followed.profilePic || 'https://via.placeholder.com/40'}
                       alt={followed.name}
-                      className="w-10 h-10 rounded-full object-cover"
+                      className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
                     />
                     <div className="ml-3">
-                      <div className="font-medium text-gray-900 dark:text-white">
+                      <div className={`font-medium ${
+                        themeMode === 'dark' ? 'text-white' : 'text-gray-900'
+                      }`}>
                         {followed.name}
                       </div>
                       {followed.bio && (
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                        <div className={`text-sm ${
+                          themeMode === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
                           {followed.bio.substring(0, 30)}
                           {followed.bio.length > 30 ? '...' : ''}
                         </div>

@@ -36,7 +36,7 @@ const generateContent = async (prompt, options = {}) => {
     });
     
     if (!response?.text) throw new Error('No response generated from AI');
-    return processResponse(response.text);
+    return processResponse(response.text, options.format || 'text-only');
   } catch (error) {
     throw new Error(`Failed to generate content: ${error.message}`);
   }
@@ -44,63 +44,78 @@ const generateContent = async (prompt, options = {}) => {
 
 // Helper to format prompt for better results
 const formatPrompt = (prompt, options = {}) => {
-  const { tone = 'professional', length = 'medium', format = 'blog' } = options;
+  const { tone = 'professional', length = 'medium', format = 'text-only' } = options;
   
+  let formatInstructions = '';
+  
+  switch (format) {
+    case 'text-only':
+      formatInstructions = `
+      Create clean, readable text with these guidelines:
+      - Use clear section headings without special formatting
+      - Write in complete sentences with proper paragraphs
+      - Use simple bullet points with dashes (-)
+      - Keep code examples simple and minimal
+      - Focus on clear explanations over fancy formatting
+      - Use double line breaks between sections
+      - Avoid HTML, markdown, or special symbols
+      `;
+      break;
+      
+    case 'code-only':
+      formatInstructions = `
+      Focus heavily on technical content:
+      - Include multiple code examples with proper syntax
+      - Use code blocks with language specification
+      - Provide step-by-step technical instructions
+      - Include inline code references frequently
+      - Add technical comments and explanations
+      - Use programming best practices
+      `;
+      break;
+      
+    case 'tutorial':
+      formatInstructions = `
+      Create a step-by-step tutorial format:
+      - Number each major step clearly
+      - Include code examples for each step
+      - Add "Note:" and "Tip:" sections
+      - Use clear section headings
+      - Include prerequisites and setup instructions
+      - Add troubleshooting sections
+      `;
+      break;
+      
+    case 'mixed':
+    default:
+      formatInstructions = `
+      Create rich, well-formatted content:
+      - Use clear section headings with proper formatting
+      - Include code blocks where relevant
+      - Add bullet points for lists
+      - Use emphasis for important terms
+      - Include examples and explanations
+      - Balance text and technical content
+      `;
+      break;
+  }
+
   return `
-    Write a ${format} post in a ${tone} tone, using these exact formatting rules:
-
-    Formatting Requirements:
-    1. Use **Section Name:** for main section headings
-       Example: **Introduction:**
-
-    2. Use *asterisks* for important terms
-       Example: *artificial intelligence* is transforming industries
-
-    3. For code blocks:
-       - Always use triple backticks with appropriate language
-       - Maintain proper indentation (4 spaces)
-       - Put code blocks on new lines
-       - Example:
-
-       \`\`\`python
-       def example_function():
-           # This is a comment
-           value = 42
-           if value > 0:
-               print("Positive")
-           return value
-
-       def another_example():
-           data = {
-               "key": "value",
-               "numbers": [1, 2, 3]
-           }
-           return data
-       \`\`\`
-
-    4. For inline code:
-       Use single backticks: \`variable_name\` or \`function()\`
-
-    5. Use _underscores_ for emphasis
-       Example: This is _very_ important
-
-    6. Use bullet points with asterisk:
-       * First point with *key term*
-       * Second point with \`code\`
-       * Third point with _emphasis_
-
-    7. Use double newlines between sections and code blocks
-
-    Topic: ${prompt}
-
-    Format your response exactly as:
+    Write a comprehensive article about: ${prompt}
+    
+    Tone: ${tone}
+    Length: ${length}
+    
+    ${formatInstructions}
+    
+    Format your response as:
     TITLE: [Your title]
-    CONTENT: [Your formatted content following the rules above]
+    CONTENT: [Your content following the guidelines above]
   `.trim();
 };
 
 // Helper to process AI response
-const processResponse = (content) => {
+const processResponse = (content, format = 'text-only') => {
   if (!content) throw new Error('No content generated');
 
   // Extract title and content
@@ -114,6 +129,32 @@ const processResponse = (content) => {
   const title = titleMatch[1].trim();
   let processedContent = contentMatch[1].trim();
 
+  // For text-only format, keep it simple and clean
+  if (format === 'text-only') {
+    processedContent = processedContent
+      // Clean up any markdown or HTML
+      .replace(/<[^>]*>/g, '')
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/_([^_]+)_/g, '$1')
+      // Handle section headers simply
+      .replace(/^#+\s*(.+)$/gm, '\n$1\n' + '='.repeat(20) + '\n')
+      // Handle bullet points
+      .replace(/^\s*[-*]\s+(.+)$/gm, '• $1')
+      // Clean up extra whitespace while preserving paragraph breaks
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/[ \t]+/g, ' ')
+      .trim();
+    
+    return {
+      title,
+      content: processedContent,
+      suggestions: []
+    };
+  }
+
+  // For other formats, use the existing rich formatting
   // Handle code blocks first (they might contain other markdown)
   const codeBlocks = new Map();
   let codeBlockCount = 0;
